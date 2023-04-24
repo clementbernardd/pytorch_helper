@@ -32,6 +32,7 @@ class AbstractExperiment:
         :param config: the config helper class to convert yaml hp
 
     """
+
     pl_model: Optional[Union[LightningModule, AbstractPlModule]] = None
     datamodule: Optional[Union[LightningDataModule, DataModuleAbstract]] = None
     preprocesses: Optional[List[PreprocessAbstract]] = None
@@ -79,7 +80,6 @@ class AbstractExperiment:
     def train(self, *args, **kwargs):
         """Training loop."""
         self.setup_train(*args, **kwargs)
-        breakpoint()
         self.trainer.fit(self.pl_model, self.datamodule)
         self.post_train(*args, **kwargs)
 
@@ -98,7 +98,9 @@ class AbstractExperiment:
     def predict(self, path_to_save: str, *args, **kwargs):
         self.setup_eval(*args, **kwargs)
         if self.trainer is not None and self.datamodule is not None:
-            predictions = self.trainer.predict(self.pl_model, self.datamodule.test_dataloader())
+            predictions = self.trainer.predict(
+                self.pl_model, self.datamodule.test_dataloader()
+            )
             predictions = self._convert_preds_to_lists(predictions)
             save_json(predictions, path_to_save)  # type: ignore
         else:
@@ -157,12 +159,16 @@ class AbstractExperiment:
         :param pl_model: the pytorch lightning class that does the training process.
         """
         self.pl_model = self._init_module(pl_model, "pl_model", AbstractPlModule)
-        custom_loggers = custom_loggers if custom_loggers is not None else self.custom_loggers
+        custom_loggers = (
+            custom_loggers if custom_loggers is not None else self.custom_loggers
+        )
         if self.pl_model is not None:
             self.pl_model.config_path = self.config_path  # type: ignore
             self.pl_model.custom_loggers = custom_loggers
 
-    def _init_module(self, module: Any, name: str, class_instance: Any = None,*args, **kwargs):
+    def _init_module(
+        self, module: Any, name: str, class_instance: Any = None, *args, **kwargs
+    ):
         """
         Return the value if exists in the config file.
         :param module: the object to return if not None
@@ -170,7 +176,11 @@ class AbstractExperiment:
         :param class_instance: the instance of the class that module should be
         :return:
         """
-        condition = isinstance(module, class_instance) if class_instance is not None else (module is not None)
+        condition = (
+            isinstance(module, class_instance)
+            if class_instance is not None
+            else (module is not None)
+        )
         if condition:
             return module
         else:
@@ -180,12 +190,16 @@ class AbstractExperiment:
             else:
                 logger.debug("METHOD NOT FOUND IN CONFIG HELPER")
 
-    def init_datamodule(self, datamodule: Optional[DataModuleAbstract] = None, *args, **kwargs):
+    def init_datamodule(
+        self, datamodule: Optional[DataModuleAbstract] = None, *args, **kwargs
+    ):
         """
         Initialise the dataloaders.
         :param datamodule: the datamodule that returns the different dataloaders.
         """
-        self.datamodule = self._init_module(datamodule, "datamodule", DataModuleAbstract)
+        self.datamodule = self._init_module(
+            datamodule, "datamodule", DataModuleAbstract
+        )
 
     def init_preprocesses(
         self, preprocesses: Optional[List[PreprocessAbstract]] = None, *args, **kwargs

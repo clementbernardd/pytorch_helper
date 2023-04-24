@@ -17,6 +17,7 @@ class AbstractPlModule(LightningModule):
     """
     Class that defines all the needed functions to be used for deep learning approches.
     """
+
     def __init__(
         self,
         model: nn.Module,
@@ -33,20 +34,24 @@ class AbstractPlModule(LightningModule):
         """
         super().__init__()
         self.model = model
-        self.custom_loggers = custom_loggers if custom_loggers is not None else [DefaultLogger()]
+        self.custom_loggers = (
+            custom_loggers if custom_loggers is not None else [DefaultLogger()]
+        )
         # Variables to fill
         self.metrics_dict_train: Dict[str, Any] = {}
         self.metrics_dict_val: Dict[str, Any] = {}
         self.metrics_dict_test: Dict[str, Any] = {}
-        self.config_path = None  # Used only to keep track of the path of the config file
+        self.config_path = (
+            None  # Used only to keep track of the path of the config file
+        )
         # Setups
         self.setup_hp(*args, **kwargs)
         self.setup_loss(*args, **kwargs)
         self.setup_metrics(*args, **kwargs)
 
-    def setup_loss(self,loss_name: str, *args, **kwargs):
+    def setup_loss(self, loss_name: str, *args, **kwargs):
         """Set the loss according to a name.
-            :param loss_name: the name of the loss.
+        :param loss_name: the name of the loss.
         """
         loss = NAME_TO_LOSS.get(loss_name, None)
         if loss is None:
@@ -72,7 +77,7 @@ class AbstractPlModule(LightningModule):
         x, y = batch
         return x, y
 
-    def setup_hp(self, lr: float,optimizer_name: str, *args, **kwargs):
+    def setup_hp(self, lr: float, optimizer_name: str, *args, **kwargs):
         """Set the hyperparameters.
         Args:
             :param lr: learning rate
@@ -82,7 +87,7 @@ class AbstractPlModule(LightningModule):
         self.optimizer_class = NAME_TO_OPTIMIZER.get(optimizer_name, None)
 
     def configure_optimizers(self):
-        """Configure the optimizer """
+        """Configure the optimizer"""
         if self.optimizer_class is None:
             logger.debug("OPTIMIZER NAME NOT FOUND")
         optimizer = self.optimizer_class(self.parameters(), lr=self.lr)
@@ -195,7 +200,9 @@ class AbstractPlModule(LightningModule):
                 # Log only for the training set
                 logger.log_metric(split, score, metric_name, pl_model=self)
 
-    def _log_metrics_to_logger_end_epoch(self, logger: LoggerAbstract, scores: Dict, split: str):
+    def _log_metrics_to_logger_end_epoch(
+        self, logger: LoggerAbstract, scores: Dict, split: str
+    ):
         """Log metrics at the end of epoch."""
         for metric_name, score in scores.items():
             logger.log_metric_end_epoch(split, score, metric_name, pl_model=self)

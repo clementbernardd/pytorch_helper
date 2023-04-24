@@ -1,6 +1,6 @@
 """Class that convert a file with hyperparameters to python readable variables."""
 from abc import abstractmethod
-from typing import Any, List, Optional,Union
+from typing import Any, List, Optional, Union
 
 from omegaconf import DictConfig
 from pytorch_lightning import Trainer

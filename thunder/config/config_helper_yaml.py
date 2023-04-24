@@ -5,7 +5,6 @@ from typing import Any, Dict, List, Optional, Union
 from loguru import logger
 from omegaconf import DictConfig
 from lightning import Trainer
-from lightning.pytorch.cli import instantiate_class
 from torch import nn
 
 from thunder.config.config_helper_abstract import ConfigHelperAbstract
@@ -15,7 +14,7 @@ from thunder.data.dataset_abstract import DatasetAbstract
 from thunder.features.preprocess_abstract import PreprocessAbstract
 from thunder.loggers.logger_abstract import LoggerAbstract
 from thunder.pl_model.abstract_pl_model import AbstractPlModule
-from thunder.utils.utils import instantiate_class_from_name, open_yml, save_to_yaml
+from thunder.utils.utils import open_yml, save_to_yaml, instantiate_class_from_init
 
 
 class ConfigHelperYAML(ConfigHelperAbstract):
@@ -58,15 +57,18 @@ class ConfigHelperYAML(ConfigHelperAbstract):
         """
         config = config if config is not None else self.config
         if isinstance(keys, str):
-            return config.get(keys, None)
+            output = config.get(keys, None)
+            return dict(output) if output is not None else output
         elif isinstance(keys, list):
             if len(keys) == 1:
-                return config.get(keys[0], None)
+                output = config.get(keys[0], None)
+                return dict(output) if output is not None else output
             else:
-                return self._get_value_from_keys(
+                output = self._get_value_from_keys(
                     keys[1:],
                     config.get(keys[0], {}),
                 )
+                return dict(output) if output is not None else output
         else:
             raise AttributeError(
                 "KEYS TO SEARCH IN CONFIG FILE BAD TYPE : SHOULD BE STR OR LIST, "
@@ -83,12 +85,10 @@ class ConfigHelperYAML(ConfigHelperAbstract):
         if list_preprocesses is None:
             return preprocesses
         for name in list_preprocesses:
-            preprocess_class = self._get_value_from_keys(["preprocesses", name, "class"])
-            class_inst = instantiate_class_from_name(self.path, preprocess_class)
-            params = self._get_value_from_keys(["preprocesses", name, "params"])
-            params = params.copy() if params is not None else {}
+            params = self._get_value_from_keys(["preprocesses", name])
+            class_inst = instantiate_class_from_init(init=params)
             if class_inst is not None:
-                preprocesses.append(class_inst(**params))
+                preprocesses.append(class_inst)
         return preprocesses
 
     def get_dataset(self) -> Optional[DatasetAbstract]:
@@ -97,10 +97,10 @@ class ConfigHelperYAML(ConfigHelperAbstract):
         This function doesn't use the hyperparameters of the dataset.
         :return: the Dataset instantiate.
         """
-        dataset_path = self._get_value_from_keys(["dataset", "class"])
-        if dataset_path is None:
+        dataset_params = self._get_value_from_keys(["dataset"])
+        if dataset_params is None:
             return None
-        dataset_class = instantiate_class_from_name(self.path, dataset_path)
+        dataset_class = instantiate_class_from_init(init=dataset_params)
         if dataset_class is not None:
             return dataset_class
         else:
@@ -115,71 +115,50 @@ class ConfigHelperYAML(ConfigHelperAbstract):
         """
         # Get the preprocesses
         preprocess = self.get_preprocesses()
-        # Get the dataset class
-        dataset_class = self.get_dataset()
-        dataset_params = self._get_value_from_keys(["dataset", "params"])
-        dataset_params = {} if dataset_params is None else dataset_params
+        dataset_params = self._get_value_from_keys(["dataset"])
         # Get the dataloader params and class
-        datamodule_path = self._get_value_from_keys(["datamodule", "class"])
-        datamodule_class = instantiate_class_from_name(self.path, datamodule_path)
-        datamodule_params = dict(self._get_value_from_keys(["datamodule", "params"]).copy())
+        datamodule_params = self._get_value_from_keys(["datamodule"])
         # Fill the last parameters : preprocesses and dataset class
-        datamodule_params["preprocesses"] = preprocess
-        datamodule_params["dataset_class"] = dataset_class
-        breakpoint()
-        datamodule_params = {**dataset_params, **datamodule_params}
-        if datamodule_class is not None:
-            dataloader = datamodule_class(
-                **datamodule_params,
-            )
-        else:
-            raise AttributeError("FAIL TO LOAD DATALAODER")
-        return dataloader
+        params = {"preprocesses": preprocess, "dataset_init": dataset_params}
+        datamodule_params["init_args"] = {
+            **datamodule_params.get("init_args", {}),
+            **params,
+        }
+        datamodule = instantiate_class_from_init(init=datamodule_params)
+        return datamodule
 
     def get_model(self) -> Optional[nn.Module]:
         """
         Return the pytorch model from yaml.
         :return pytorch model from class in the config file.
         """
-        model_path = self._get_value_from_keys(["model", "class"])
-        if model_path is None:
+        model_params = self._get_value_from_keys("model")
+        if model_params is None:
             return None
-        model_class = instantiate_class_from_name(self.path, model_path)
-        params = self._get_value_from_keys(["model", "params"]).copy()
-        if model_class is not None:
-            return model_class(**params)
-        else:
-            raise AttributeError("MODEL NOT LOADED")
+        model = instantiate_class_from_init(model_params)
+        return model
 
     def get_pl_model(self) -> Optional[AbstractPlModule]:
         """
         Return the pytorch lightning model from yaml information.
         :return: the pytorch lightning model from the config file.
         """
-        pl_model_path = self._get_value_from_keys(["pl_model", "class"])
-        if pl_model_path is None:
+        pl_model_params = self._get_value_from_keys(["pl_model"])
+        if pl_model_params is None:
             return None
-        pl_model_class = instantiate_class_from_name(self.path, pl_model_path)
-        if pl_model_class is not None:
-            params = dict(self._get_value_from_keys(["pl_model", "params"]).copy())
-            model = self.get_model()
-            params["model"] = model
-            checkpoint = params.get("checkpoint_path", None)
-            # Load weight if checkpoint is in the params
-            if checkpoint is not None and os.path.exists(checkpoint):
-                pl_model = pl_model_class.load_from_checkpoint(**params)
-                logger.debug(f"MODEL LOADED FROM {checkpoint}")
-            else:
-                pl_model = pl_model_class(**params)
-            return pl_model
-        else:
-            raise AttributeError("PL MODEL NOT LOADED")
+        model = self.get_model()
+        pl_model_params["init_args"] = {
+            **pl_model_params.get("init_args", {}),
+            **{"model": model},
+        }
+        pl_model = instantiate_class_from_init(pl_model_params)
+        return pl_model
 
     def get_trainer(self) -> Trainer:
         """Return the trainer form yaml file."""
-        params = self._get_value_from_keys(["trainer", "params"])
+        params = self._get_value_from_keys(["trainer"])
         if params is not None:
-            trainer = Trainer(**params)
+            trainer = instantiate_class_from_init(params)
         else:
             trainer = Trainer()
         return trainer
@@ -210,18 +189,23 @@ class ConfigHelperYAML(ConfigHelperAbstract):
         :param log_path: path to the logs
         :param checkpoint_path: path where is stored the model checkpoint.
         """
-        params = self.config.get("pl_model", {}).get("params", {})
+        params = self.config.get("pl_model", {}).get("init_args", {})
         params["checkpoint_path"] = checkpoint_path
         path_to_save = os.path.join(log_path, "config.yml")
         save_to_yaml(path_to_save, self.config)
         logger.debug(f"YAML CONFIG SAVED IN : {path_to_save}")
 
-    def get_experiment_class(self) -> Any:
+    def get_experiment_class(self, *args, **kwargs) -> Any:
         """
         Return the class given by the name in the config file
         """
-        class_name = self.config.get("experiment", {}).get("class", None)
-        if class_name is None:
-            logger.debug("NO EXPERIMENT CLASS FOUND IN CONFIG")
-        experiment_ = instantiate_class_from_name(self.path, class_name)
-        return experiment_
+        params = self.config.get("experiment", None)
+        if params is None:
+            raise NotImplementedError("NO EXPERIMENT CLASS FOUND IN CONFIG")
+        params = dict(params)
+        params["init_args"] = {
+            **params.get("init_args", {}),
+            **{"config_path": self.config_path},
+        }
+        experiment = instantiate_class_from_init(init=params)
+        return experiment

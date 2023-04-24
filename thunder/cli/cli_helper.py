@@ -1,5 +1,5 @@
 """Class that does the main functions of a deep learning model."""
-from typing import Optional, Dict, Union
+from typing import Dict, Union
 
 import hydra
 from loguru import logger
@@ -25,11 +25,13 @@ class CLIHelper:
         """
         command = cfg.get("command", None)
         if command is None:
-            logger.debug("NO LAUNCHING COMMAND SPECIFIED. IT SHOULD BE IN THE 'command' name")
+            logger.debug(
+                "NO LAUNCHING COMMAND SPECIFIED. IT SHOULD BE IN THE 'command' name"
+            )
         cli_helper = CLIHelper(config_path=cfg)
-        experiment_class = cli_helper.config_helper.get_experiment_class()
+        experiment = cli_helper.config_helper.get_experiment_class()
         if command == "train":
-            cli_helper.train(experiment_class=experiment_class, **cfg)
+            cli_helper.train(experiment=experiment)
         elif command == "test":
             cli_helper.test(**cfg)
         elif command == "infer":
@@ -37,14 +39,13 @@ class CLIHelper:
         else:
             logger.debug(f"{command} IS NOT A COMMAND AVAILABLE")
 
-    def train(self, experiment_class: AbstractExperiment, *args, **kwargs):
+    def train(self, experiment: AbstractExperiment, *args, **kwargs):
         """
         Do the training process
-        :param experiment_class: the class to instantiate for the experiments.
+        :param experiment: the experiment to use
         :return:
         """
         logger.error("TRAINING PROCESS OK")
-        experiment = experiment_class(config_path = self.config_path,*args, **kwargs)
         experiment.train(*args, **kwargs)
 
     def test(self, *args, **kwargs):

@@ -23,6 +23,8 @@ class LoggerAbstract:
         raise NotImplementedError
 
     @abstractmethod
-    def log_metric_end_epoch(self, split: str, score: Any, metric_name: str, *args, **kwargs):
+    def log_metric_end_epoch(
+        self, split: str, score: Any, metric_name: str, *args, **kwargs
+    ):
         """Log at the end of epoch."""
         raise NotImplementedError

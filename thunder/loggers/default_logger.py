@@ -26,7 +26,9 @@ class DefaultLogger(LoggerAbstract):
         if pl_model is not None:
             pl_model.log(f"{split}_{metric_name}_step", score)
 
-    def log_metric_end_epoch(self, split: str, score: Any, metric_name: str, *args, **kwargs):
+    def log_metric_end_epoch(
+        self, split: str, score: Any, metric_name: str, *args, **kwargs
+    ):
         """Log at the end of epoch."""
         # Get the model from kwargs
         pl_model = kwargs.get("pl_model", None)

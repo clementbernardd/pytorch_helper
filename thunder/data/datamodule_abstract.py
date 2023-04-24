@@ -7,6 +7,7 @@ from lightning.pytorch import LightningDataModule
 from torch.utils.data import DataLoader, Dataset
 
 from thunder.features.preprocess_abstract import PreprocessAbstract
+from thunder.utils.utils import instantiate_class_from_init
 
 
 class DataModuleAbstract(LightningDataModule):
@@ -25,6 +26,7 @@ class DataModuleAbstract(LightningDataModule):
 
     def __init__(
         self,
+        dataset_init: Dict,
         preprocesses: Optional[List[PreprocessAbstract]],
         batch_size: int,
         device: Union[Optional[str], torch.device],
@@ -36,6 +38,8 @@ class DataModuleAbstract(LightningDataModule):
         """
         Initialisation of the class
         Args:
+        :param dataset_init: a dictionary with the "class_path" and "init_args" to instantiate
+            the dataset
         :param preprocesses: the list of different preprocessing to do
         :param batch_size: the number of examples for a batch
         :param shuffle: whether to shuffle or not the train dataset.
@@ -47,6 +51,7 @@ class DataModuleAbstract(LightningDataModule):
         datasets: dictionary with Dataset for training, validation and test sets.
         """
         super().__init__()
+        self.dataset_init = dataset_init
         self.preprocesses = preprocesses
         self.batch_size = batch_size
         self.all_shuffle = {"train": shuffle, "valid": False, "test": False}
@@ -58,6 +63,17 @@ class DataModuleAbstract(LightningDataModule):
             "test": Dataset(),
         }
         self.prepare_data(*args, **kwargs)
+
+    @staticmethod
+    def instantiate_dataset(dataset_init: Dict, *args, **kwargs) -> Dataset:
+        """Instantiate the dataset with the given arguments.
+
+        Args:
+             :param dataset_init: Dict of the form {'class_path': ..., 'init_args': ...}
+        :return an instance of the Dataset
+        """
+        dataset_init["init_args"] = {**dataset_init.get("init_args", {}), **kwargs}
+        return instantiate_class_from_init(init=dataset_init)
 
     @abstractmethod
     def prepare_data(self, *args, **kwargs):
@@ -97,7 +113,7 @@ class DataModuleAbstract(LightningDataModule):
                 batch_size=self.batch_size,
                 shuffle=self.all_shuffle[split],
                 collate_fn=collate_fn,
-                num_workers=self.num_workers
+                num_workers=self.num_workers,
             )
         else:
             raise NotImplementedError(f"Split not in dataset keys : {split}")

@@ -34,6 +34,8 @@ class WandbLogger(LoggerAbstract):
         """Log the metric."""
         wandb.log({f"{split}_{metric_name}": score})
 
-    def log_metric_end_epoch(self, split: str, score: Any, metric_name: str, *args, **kwargs):
+    def log_metric_end_epoch(
+        self, split: str, score: Any, metric_name: str, *args, **kwargs
+    ):
         """Log at the end of epoch."""
         wandb.log({f"{split}_{metric_name}_epoch": score})

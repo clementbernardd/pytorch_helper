@@ -2,7 +2,7 @@ import glob
 import importlib
 import json
 import os
-from typing import Any, Dict, List, Optional
+from typing import Any, Dict, List, Optional, Union, Tuple
 
 import yaml
 from loguru import logger
@@ -38,7 +38,9 @@ def save_to_yaml(path: str, document: Dict) -> None:
         yaml.dump(document, yaml_file)
 
 
-def listdir_or_py(path: str, to_remove: List[str] = ["__pycache__", "__init__.py", "wandb"]):
+def listdir_or_py(
+    path: str, to_remove: List[str] = ["__pycache__", "__init__.py", "wandb"]
+):
     """List the directory or python files.
     Args
         :param path: the path to get the directories from
@@ -117,3 +119,20 @@ def save_json(object: Dict, path: str):
         path_to_save = path + ".json"
     with open(path_to_save, "w") as file:
         json.dump(object, file)
+
+
+def instantiate_class_from_init(init: Dict[str, Any]) -> Any:
+    """Instantiates a class with the given args and init.
+    Code original : "from lightning.pytorch.cli import instantiate_class"
+
+    Args:
+        init: Dict of the form {"class_path":...,"init_args":...}.
+
+    Returns:
+        The instantiated class object.
+    """
+    kwargs = init.get("init_args", {})
+    class_module, class_name = init["class_path"].rsplit(".", 1)
+    module = __import__(class_module, fromlist=[class_name])
+    args_class = getattr(module, class_name)
+    return args_class(**kwargs)
