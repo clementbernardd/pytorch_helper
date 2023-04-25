@@ -1,9 +1,11 @@
 """Abstract Class for Experiment using Pytorch Lightning."""
 import os
+import random
 from dataclasses import dataclass
 from typing import Any, Dict, List, Optional, Type, Union
 
 import numpy as np
+import torch
 from loguru import logger
 from omegaconf import DictConfig
 from lightning.pytorch import Callback, LightningDataModule, Trainer, LightningModule
@@ -48,6 +50,15 @@ class AbstractExperiment:
         """
         self.custom_loggers = None
         self.init_config_helper(*args, **kwargs)
+        self.set_seed(seed=77)
+
+    def set_seed(self, seed: int = 77):
+        """
+        Set the seed for numpy, random, torch
+        """
+        np.random.seed(seed)
+        torch.manual_seed(seed)
+        random.seed(seed)
 
     def init_config_helper(
         self,
