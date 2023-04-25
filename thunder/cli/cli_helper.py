@@ -66,6 +66,5 @@ class CLIHelper:
         """
         logger.debug("INFERENCE CLI")
 
-
 if __name__ == "__main__":
     CLIHelper.cli()
