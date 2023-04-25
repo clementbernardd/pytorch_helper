@@ -45,7 +45,6 @@ class CLIHelper:
         :param experiment: the experiment to use
         :return:
         """
-        logger.error("TRAINING PROCESS OK")
         experiment.train(*args, **kwargs)
 
     def test(self, *args, **kwargs):
