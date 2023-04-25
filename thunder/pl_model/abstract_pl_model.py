@@ -8,7 +8,6 @@ from lightning.pytorch import LightningModule
 from torch import nn
 from torchmetrics import Accuracy, F1Score, Precision, Recall
 
-from helper.pytorch_helper.thunder.enum.name_to_fn import NAME_TO_LOSS, NAME_TO_OPTIMIZER
 from helper.pytorch_helper.thunder.loggers.default_logger import DefaultLogger
 from helper.pytorch_helper.thunder.loggers.logger_abstract import LoggerAbstract
 
