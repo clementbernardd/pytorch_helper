@@ -6,8 +6,8 @@ import torch
 from lightning.pytorch import LightningDataModule
 from torch.utils.data import DataLoader, Dataset
 
-from thunder.features.preprocess_abstract import PreprocessAbstract
-from thunder.utils.utils import instantiate_class_from_init
+from helper.pytorch_helper.thunder.features.preprocess_abstract import PreprocessAbstract
+from helper.pytorch_helper.thunder.utils.utils import instantiate_class_from_init
 
 
 class DataModuleAbstract(LightningDataModule):

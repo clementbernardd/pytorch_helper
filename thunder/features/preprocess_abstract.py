@@ -1,7 +1,7 @@
 """Preprocess abstract class to define the main function to use."""
 from abc import abstractmethod
 
-from thunder.data.sample import Sample
+from helper.pytorch_helper.thunder.data.sample import Sample
 
 
 class PreprocessAbstract:

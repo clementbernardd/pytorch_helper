@@ -5,7 +5,7 @@ from typing import Any
 from dotenv import load_dotenv
 
 import wandb
-from thunder.loggers.logger_abstract import LoggerAbstract
+from helper.pytorch_helper.thunder.loggers.logger_abstract import LoggerAbstract
 
 
 class WandbLogger(LoggerAbstract):
