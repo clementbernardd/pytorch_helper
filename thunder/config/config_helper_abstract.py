@@ -8,7 +8,12 @@ from torch import nn
 
 from helper.pytorch_helper.thunder.data.datamodule_abstract import DataModuleAbstract
 from helper.pytorch_helper.thunder.data.dataset_abstract import DatasetAbstract
-from helper.pytorch_helper.thunder.features.preprocess_abstract import PreprocessAbstract
+from helper.pytorch_helper.thunder.features.postproccess_abstract import (
+    PostprocessAbstract,
+)
+from helper.pytorch_helper.thunder.features.preprocess_abstract import (
+    PreprocessAbstract,
+)
 from helper.pytorch_helper.thunder.loggers.logger_abstract import LoggerAbstract
 from helper.pytorch_helper.thunder.pl_model.abstract_pl_model import AbstractPlModule
 
@@ -25,6 +30,7 @@ class ConfigHelperAbstract:
         # Dictionary to convert names to given functions.
         self.name_to_function = {
             "preprocesses": self.get_preprocesses,
+            "postprocesses": self.get_postprocesses,
             "dataset": self.get_dataset,
             "datamodule": self.get_datamodule,
             "model": self.get_model,
@@ -46,6 +52,14 @@ class ConfigHelperAbstract:
         """
         Return the preprocesses from the config file.
         :return: a list of preprocesses initialised with they parameters
+        """
+        raise NotImplementedError
+
+    @abstractmethod
+    def get_postprocesses(self) -> Optional[List[PostprocessAbstract]]:
+        """
+        Return the postprocesses from the config file.
+        :return: a list of postprocesses initialised with they parameters
         """
         raise NotImplementedError
 

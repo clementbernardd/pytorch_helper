@@ -6,7 +6,9 @@ from loguru import logger
 from omegaconf import DictConfig
 
 from helper.pytorch_helper.thunder.config.config_helper_yaml import ConfigHelperYAML
-from helper.pytorch_helper.thunder.experiments.abstract_experiment import AbstractExperiment
+from helper.pytorch_helper.thunder.experiments.abstract_experiment import (
+    AbstractExperiment,
+)
 
 
 class CLIHelper:
@@ -15,7 +17,7 @@ class CLIHelper:
         self.config_helper = ConfigHelperYAML(config_path)
 
     @staticmethod
-    @hydra.main(version_base=None, config_path="../..", config_name="config")
+    @hydra.main(version_base=None)
     def cli(cfg: DictConfig) -> None:
         """
         Launch the appropriate command.
@@ -30,12 +32,14 @@ class CLIHelper:
             )
         cli_helper = CLIHelper(config_path=cfg)
         experiment = cli_helper.config_helper.get_experiment_class()
-        if command == "train":
-            cli_helper.train(experiment=experiment)
-        elif command == "test":
-            cli_helper.test(**cfg)
-        elif command == "infer":
-            cli_helper.infer(**cfg)
+        name_to_function = {
+            "train": experiment.train,
+            "test": cli_helper.test,
+            "infer": cli_helper.infer,
+            "predict": experiment.predict,
+        }
+        if command in name_to_function:
+            name_to_function[command](**cfg)
         else:
             logger.debug(f"{command} IS NOT A COMMAND AVAILABLE")
 

@@ -34,3 +34,8 @@ class DefaultLogger(LoggerAbstract):
         pl_model = kwargs.get("pl_model", None)
         if pl_model is not None:
             pl_model.log(f"{split}_{metric_name}_total", score)
+
+    def log_value(self, name: str, value: Any, *args, **kwargs):
+        pl_model = kwargs.get("pl_model", None)
+        if pl_model is not None:
+            pl_model.log(name, value)

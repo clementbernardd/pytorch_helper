@@ -4,7 +4,9 @@ from typing import List, Optional
 
 from torch.utils.data import Dataset
 
-from helper.pytorch_helper.thunder.features.preprocess_abstract import PreprocessAbstract
+from helper.pytorch_helper.thunder.features.preprocess_abstract import (
+    PreprocessAbstract,
+)
 from helper.pytorch_helper.thunder.data.sample import Sample
 
 

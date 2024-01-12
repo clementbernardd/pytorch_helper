@@ -28,3 +28,8 @@ class LoggerAbstract:
     ):
         """Log at the end of epoch."""
         raise NotImplementedError
+
+    @abstractmethod
+    def log_value(self, name: str, value: Any, *args, **kwargs):
+        """Log the value."""
+        raise NotImplementedError
