@@ -23,7 +23,6 @@ from helper.pytorch_helper.thunder.utils.utils import (
     save_to_yaml,
     instantiate_class_from_init,
 )
-from src.pl_model.pl_dna_bert import PLDNABert
 
 
 class ConfigHelperYAML(ConfigHelperAbstract):
