@@ -29,7 +29,7 @@ class WandbLogger(LoggerAbstract):
         os.environ["WANDB_API_KEY"] = wb_token
         config = OmegaConf.to_container(config, resolve=True)
         mode = "offline" if self.is_local else "online"
-        wandb.init(project="rna-bert-angles-regression", name=self.name, config=config, mode=mode, dir="logs")
+        wandb.init(project="pfam_classification", name=self.name, config=config, mode=mode, dir="logs")
 
     def log_loss(self, split: str, loss: Any, *args, **kwargs):
         """Log the loss."""

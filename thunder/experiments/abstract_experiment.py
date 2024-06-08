@@ -289,10 +289,8 @@ class AbstractExperiment:
         if self.config is not None:
             checkpoint_dir = self._init_module(checkpoint_dir, "checkpoint_dir")
             model_name = self._init_module(model_name, "model_name")
-            # monitor_loss = "val_loss" if monitor_loss is None else monitor_loss
+            monitor_loss = "val_loss" if monitor_loss is None else monitor_loss
             save_top_k = 1 if save_top_k is None else save_top_k
-        # TODO: CHANGE VALUE
-        monitor_loss = "train_loss"
         filename = f"{model_name}-{{{monitor_loss}:.2f}}-{{epoch}}"
         return ModelCheckpoint(
             dirpath=checkpoint_dir,

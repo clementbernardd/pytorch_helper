@@ -37,6 +37,7 @@ class CLIHelper:
             "test": cli_helper.test,
             "infer": cli_helper.infer,
             "predict": experiment.predict,
+            "embed": experiment.get_embeddings,
         }
         if command in name_to_function:
             name_to_function[command](**cfg)
@@ -51,14 +52,14 @@ class CLIHelper:
         """
         experiment.train(*args, **kwargs)
 
-    def test(self, *args, **kwargs):
+    def test(self, experiment: AbstractExperiment, *args, **kwargs):
         """
         Do the evaluation process
         :param args:
         :param kwargs:
         :return:
         """
-        logger.debug("EVALUATION CLI")
+        experiment.test(*args, **kwargs)
 
     def infer(self, *args, **kwargs):
         """

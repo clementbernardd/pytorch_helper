@@ -180,10 +180,12 @@ class ConfigHelperYAML(ConfigHelperAbstract):
         }
         chkpt_path = self.config.get("pl_model",{}).get("init_args", {}).get("checkpoint_path", None)
         if chkpt_path is None:
+            logger.debug("NO CHECKPOINT PATH FOUND IN CONFIG FILE")
             pl_model = instantiate_class_from_init(pl_model_params)
         else:
             pl_model = instantiate_class_from_init(pl_model_params)
             pl_model = pl_model.load_from_checkpoint(**pl_model_params["init_args"])
+            logger.debug("CHECKPOINT LOADED")
         return pl_model
 
     def get_trainer(self) -> Trainer:

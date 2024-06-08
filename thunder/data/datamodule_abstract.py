@@ -56,7 +56,6 @@ class DataModuleAbstract(LightningDataModule):
         self.dataset_init = dataset_init
         self.preprocesses = preprocesses
         self.batch_size = batch_size
-        self.all_shuffle = {"train": shuffle, "valid": False, "test": False}
         self.device = device
         self.num_workers = num_workers
         self.datasets: Dict[str, Dataset] = {
@@ -64,6 +63,7 @@ class DataModuleAbstract(LightningDataModule):
             "valid": Dataset(),
             "test": Dataset(),
         }
+        self.all_shuffle = {"train": True, "valid": False, "test": False}
         self.prepare_data(*args, **kwargs)
 
     @staticmethod
