@@ -1,7 +1,7 @@
 """Default logger of pytorch lightning."""
 from typing import Any
 
-from thunder.loggers.logger_abstract import LoggerAbstract
+from cthunder.loggers.logger_abstract import LoggerAbstract
 
 
 class DefaultLogger(LoggerAbstract):

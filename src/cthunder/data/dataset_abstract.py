@@ -4,8 +4,8 @@ from typing import List, Optional
 
 from torch.utils.data import Dataset
 
-from thunder.features.preprocess_abstract import PreprocessAbstract
-from thunder.data.sample import Sample
+from cthunder.features.preprocess_abstract import PreprocessAbstract
+from cthunder.data.sample import Sample
 
 
 class DatasetAbstract(Dataset):

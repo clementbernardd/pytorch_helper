@@ -5,8 +5,8 @@ import hydra
 from loguru import logger
 from omegaconf import DictConfig
 
-from thunder.config.config_helper_yaml import ConfigHelperYAML
-from thunder.experiments.abstract_experiment import AbstractExperiment
+from cthunder.config.config_helper_yaml import ConfigHelperYAML
+from cthunder.experiments.abstract_experiment import AbstractExperiment
 
 
 class CLIHelper:

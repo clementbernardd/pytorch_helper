@@ -7,7 +7,7 @@ from dotenv import load_dotenv
 import wandb
 from omegaconf import OmegaConf
 
-from thunder.loggers.logger_abstract import LoggerAbstract
+from cthunder.loggers.logger_abstract import LoggerAbstract
 
 
 class WandbLogger(LoggerAbstract):

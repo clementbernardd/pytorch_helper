@@ -3,7 +3,7 @@ Class that implements the abstract interface for the postprocessing.
 """
 from abc import abstractmethod
 
-from thunder.data.sample import Sample
+from cthunder.data.sample import Sample
 
 
 class PostprocessAbstract:

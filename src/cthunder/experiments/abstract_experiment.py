@@ -12,14 +12,14 @@ from lightning.pytorch import Callback, LightningDataModule, Trainer, LightningM
 from lightning.pytorch.callbacks import ModelCheckpoint, TQDMProgressBar
 from lightning.pytorch.loggers import CSVLogger
 
-from thunder.config.config_helper_abstract import ConfigHelperAbstract
-from thunder.config.config_helper_python import ConfigHelperPython
-from thunder.config.config_helper_yaml import ConfigHelperYAML
-from thunder.data.datamodule_abstract import DataModuleAbstract
-from thunder.features.preprocess_abstract import PreprocessAbstract
-from thunder.loggers.logger_abstract import LoggerAbstract
-from thunder.pl_model.abstract_pl_model import AbstractPlModule
-from thunder.utils.utils import save_json
+from cthunder.config.config_helper_abstract import ConfigHelperAbstract
+from cthunder.config.config_helper_python import ConfigHelperPython
+from cthunder.config.config_helper_yaml import ConfigHelperYAML
+from cthunder.data.datamodule_abstract import DataModuleAbstract
+from cthunder.features.preprocess_abstract import PreprocessAbstract
+from cthunder.loggers.logger_abstract import LoggerAbstract
+from cthunder.pl_model.abstract_pl_model import AbstractPlModule
+from cthunder.utils.utils import save_json
 
 
 

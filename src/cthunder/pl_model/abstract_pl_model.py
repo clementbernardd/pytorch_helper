@@ -9,12 +9,12 @@ from omegaconf import OmegaConf
 from torch import nn
 from torchmetrics import Accuracy, F1Score, Precision, Recall
 
-from thunder.features.postproccess_abstract import (
+from cthunder.features.postproccess_abstract import (
     PostprocessAbstract,
 )
-from thunder.loggers.default_logger import DefaultLogger
-from thunder.loggers.logger_abstract import LoggerAbstract
-from thunder.utils.utils import instantiate_class_from_init
+from cthunder.loggers.default_logger import DefaultLogger
+from cthunder.loggers.logger_abstract import LoggerAbstract
+from cthunder.utils.utils import instantiate_class_from_init
 
 
 class AbstractPlModule(LightningModule):

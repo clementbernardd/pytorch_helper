@@ -1,5 +1,5 @@
 [project]
-name = "thunder"
+name = "cthunder"
 version = "0.1.0"
 description = "Source code to add layers to Pytorch Lightning for training procedures."
 readme = "README.md"
