@@ -5,8 +5,8 @@ import hydra
 from loguru import logger
 from omegaconf import DictConfig
 
-from helper.pytorch_helper.thunder.config.config_helper_yaml import ConfigHelperYAML
-from helper.pytorch_helper.thunder.experiments.abstract_experiment import AbstractExperiment
+from thunder.config.config_helper_yaml import ConfigHelperYAML
+from thunder.experiments.abstract_experiment import AbstractExperiment
 
 
 class CLIHelper:
@@ -15,7 +15,7 @@ class CLIHelper:
         self.config_helper = ConfigHelperYAML(config_path)
 
     @staticmethod
-    @hydra.main(version_base=None, config_path="../..", config_name="config")
+    @hydra.main(version_base=None)
     def cli(cfg: DictConfig) -> None:
         """
         Launch the appropriate command.
@@ -30,12 +30,14 @@ class CLIHelper:
             )
         cli_helper = CLIHelper(config_path=cfg)
         experiment = cli_helper.config_helper.get_experiment_class()
-        if command == "train":
-            cli_helper.train(experiment=experiment)
-        elif command == "test":
-            cli_helper.test(**cfg)
-        elif command == "infer":
-            cli_helper.infer(**cfg)
+        name_to_function = {
+            "train": experiment.train,
+            "test": cli_helper.test,
+            "infer": cli_helper.infer,
+            "predict": experiment.predict,
+        }
+        if command in name_to_function:
+            name_to_function[command](**cfg)
         else:
             logger.debug(f"{command} IS NOT A COMMAND AVAILABLE")
 
@@ -47,14 +49,14 @@ class CLIHelper:
         """
         experiment.train(*args, **kwargs)
 
-    def test(self, *args, **kwargs):
+    def test(self, experiment: AbstractExperiment, *args, **kwargs):
         """
         Do the evaluation process
         :param args:
         :param kwargs:
         :return:
         """
-        logger.debug("EVALUATION CLI")
+        experiment.test(*args, **kwargs)
 
     def infer(self, *args, **kwargs):
         """
@@ -68,3 +70,4 @@ class CLIHelper:
 
 if __name__ == "__main__":
     CLIHelper.cli()
+

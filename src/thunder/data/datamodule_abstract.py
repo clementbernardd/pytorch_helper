@@ -6,8 +6,8 @@ import torch
 from lightning.pytorch import LightningDataModule
 from torch.utils.data import DataLoader, Dataset
 
-from helper.pytorch_helper.thunder.features.preprocess_abstract import PreprocessAbstract
-from helper.pytorch_helper.thunder.utils.utils import instantiate_class_from_init
+from thunder.features.preprocess_abstract import PreprocessAbstract
+from thunder.utils.utils import instantiate_class_from_init
 
 
 class DataModuleAbstract(LightningDataModule):
@@ -54,7 +54,6 @@ class DataModuleAbstract(LightningDataModule):
         self.dataset_init = dataset_init
         self.preprocesses = preprocesses
         self.batch_size = batch_size
-        self.all_shuffle = {"train": shuffle, "valid": False, "test": False}
         self.device = device
         self.num_workers = num_workers
         self.datasets: Dict[str, Dataset] = {
@@ -62,6 +61,7 @@ class DataModuleAbstract(LightningDataModule):
             "valid": Dataset(),
             "test": Dataset(),
         }
+        self.all_shuffle = {"train": True, "valid": False, "test": False}
         self.prepare_data(*args, **kwargs)
 
     @staticmethod
@@ -111,7 +111,7 @@ class DataModuleAbstract(LightningDataModule):
             return DataLoader(
                 self.datasets[split],  # type : ignore
                 batch_size=self.batch_size,
-                shuffle=self.all_shuffle[split],
+                shuffle=self.all_shuffle.get(split, False),
                 collate_fn=collate_fn,
                 num_workers=self.num_workers,
             )

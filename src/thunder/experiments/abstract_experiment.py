@@ -12,14 +12,15 @@ from lightning.pytorch import Callback, LightningDataModule, Trainer, LightningM
 from lightning.pytorch.callbacks import ModelCheckpoint, TQDMProgressBar
 from lightning.pytorch.loggers import CSVLogger
 
-from helper.pytorch_helper.thunder.config.config_helper_abstract import ConfigHelperAbstract
-from helper.pytorch_helper.thunder.config.config_helper_python import ConfigHelperPython
-from helper.pytorch_helper.thunder.config.config_helper_yaml import ConfigHelperYAML
-from helper.pytorch_helper.thunder.data.datamodule_abstract import DataModuleAbstract
-from helper.pytorch_helper.thunder.features.preprocess_abstract import PreprocessAbstract
-from helper.pytorch_helper.thunder.loggers.logger_abstract import LoggerAbstract
-from helper.pytorch_helper.thunder.pl_model.abstract_pl_model import AbstractPlModule
-from helper.pytorch_helper.thunder.utils.utils import save_json
+from thunder.config.config_helper_abstract import ConfigHelperAbstract
+from thunder.config.config_helper_python import ConfigHelperPython
+from thunder.config.config_helper_yaml import ConfigHelperYAML
+from thunder.data.datamodule_abstract import DataModuleAbstract
+from thunder.features.preprocess_abstract import PreprocessAbstract
+from thunder.loggers.logger_abstract import LoggerAbstract
+from thunder.pl_model.abstract_pl_model import AbstractPlModule
+from thunder.utils.utils import save_json
+
 
 
 @dataclass
@@ -29,6 +30,7 @@ class AbstractExperiment:
         :param pl_model: the pytorch lightning model
         :param datamodule: the datamodule with the different dataloaders
         :param preprocesses: the different preprocesses to use
+        :param postprocesses: the different postprocesses to use
         :param callbacks: the pytorch lightning callbacks
         :param trainer: the pytorch lightning trainer
         :param config: the config helper class to convert yaml hp
@@ -38,6 +40,7 @@ class AbstractExperiment:
     pl_model: Optional[Union[LightningModule, AbstractPlModule]] = None
     datamodule: Optional[Union[LightningDataModule, DataModuleAbstract]] = None
     preprocesses: Optional[List[PreprocessAbstract]] = None
+    postprocesses: Optional[List[PostprocessAbstract]] = None
     callbacks: Optional[List[Callback]] = None
     trainer: Optional[Trainer] = None
     config: Optional[ConfigHelperAbstract] = None
@@ -145,6 +148,7 @@ class AbstractExperiment:
     def setup_eval(self, *args, **kwargs):
         """Do the setup for the evaluation process."""
         self.setup_train(*args, **kwargs)
+        self.pl_model.eval()
 
     def setup_val(self, *args, **kwargs):
         """Do the setup for the validation."""
@@ -153,6 +157,7 @@ class AbstractExperiment:
     def setup_train(self, *args, **kwargs):
         """Initialise the parameters for the training."""
         self.init_preprocesses(*args, **kwargs)
+        self.init_postprocesses(*args, **kwargs)
         self.init_datamodule(*args, **kwargs)
         self.init_logger(*args, **kwargs)
         self.init_pl_model(*args, **kwargs)
@@ -170,12 +175,8 @@ class AbstractExperiment:
         :param pl_model: the pytorch lightning class that does the training process.
         """
         self.pl_model = self._init_module(pl_model, "pl_model", AbstractPlModule)
-        custom_loggers = (
-            custom_loggers if custom_loggers is not None else self.custom_loggers
-        )
         if self.pl_model is not None:
             self.pl_model.config_path = self.config_path  # type: ignore
-            self.pl_model.custom_loggers = custom_loggers
 
     def _init_module(
         self, module: Any, name: str, class_instance: Any = None, *args, **kwargs
@@ -221,9 +222,14 @@ class AbstractExperiment:
         """
         self.preprocesses = self._init_module(preprocesses, "preprocesses")
 
-    def init_postprocesses(self, *args, **kwargs):
-        """Initialise the postprocesses."""
-        pass
+    def init_postprocesses(
+        self, postprocesses: Optional[List[PostprocessAbstract]] = None, *args, **kwargs
+    ):
+        """Initialise the postprocesses.
+        Args:
+             :param postprocesses: a list of different postprocesses.
+        """
+        self.postprocesses = self._init_module(postprocesses, "postprocesses")
 
     def init_callbacks(self, *args, **kwargs):
         """Initialise the callbacks from pytorch lightning module."""
@@ -295,3 +301,4 @@ class AbstractExperiment:
     def infer(self, *args, **kwargs):
         """Do the inference."""
         pass
+

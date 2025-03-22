@@ -5,11 +5,16 @@ import torch
 import torch.nn.functional as F
 from loguru import logger
 from lightning.pytorch import LightningModule
+from omegaconf import OmegaConf
 from torch import nn
 from torchmetrics import Accuracy, F1Score, Precision, Recall
 
-from helper.pytorch_helper.thunder.loggers.default_logger import DefaultLogger
-from helper.pytorch_helper.thunder.loggers.logger_abstract import LoggerAbstract
+from thunder.features.postproccess_abstract import (
+    PostprocessAbstract,
+)
+from thunder.loggers.default_logger import DefaultLogger
+from thunder.loggers.logger_abstract import LoggerAbstract
+from thunder.utils.utils import instantiate_class_from_init
 
 
 class AbstractPlModule(LightningModule):
@@ -21,6 +26,9 @@ class AbstractPlModule(LightningModule):
         self,
         model: nn.Module,
         custom_loggers: Optional[List[LoggerAbstract]] = None,
+        loss_args: Any = None,
+        postprocesses: Optional[List[PostprocessAbstract]] = None,
+        checkpoint_path: Optional[str] = None,
         *args,
         **kwargs,
     ):
@@ -28,8 +36,8 @@ class AbstractPlModule(LightningModule):
         Initialise the model, hyperparameters, loss.
         :param model: the pytorch model to use
         :param custom_loggers: a list of custom loggers.
-        :param args:
-        :param kwargs:
+        :param loss_args: the path to the loss to use for the training.
+        :param checkpoint_path: the path to the checkpoint to load.
         """
         super().__init__()
         self.model = model
@@ -43,31 +51,22 @@ class AbstractPlModule(LightningModule):
         self.config_path = (
             None  # Used only to keep track of the path of the config file
         )
+        self.loss = instantiate_class_from_init(loss_args)
         # Setups
         self.setup_hp(*args, **kwargs)
-        self.setup_loss(*args, **kwargs)
         self.setup_metrics(*args, **kwargs)
-
-    def setup_loss(self, loss_name: str, *args, **kwargs):
-        """Set the loss according to a name.
-        :param loss_name: the name of the loss.
-        """
-        loss = NAME_TO_LOSS.get(loss_name, None)
-        if loss is None:
-            raise NotImplementedError("LOSS NOT FOUND")
-        self.loss = loss()
+        self.postprocesses = postprocesses
 
     def forward(self, x, y):
         output = self.model(x)
-        logits = F.log_softmax(output, dim=1)
-        return logits
+        return output
 
     def training_step(self, batch, batch_nb):
         """Compute the logits and the loss."""
         x, y = self.interpret_batch(batch)
         logits = self.forward(x, y)
         loss = self.loss(logits, y)
-        preds = self.postprocess_eval(logits, dim=1)
+        preds = self.postprocess_eval(logits)
         self.log_metrics(y, preds, loss, "train")
         return loss
 
@@ -76,20 +75,27 @@ class AbstractPlModule(LightningModule):
         x, y = batch
         return x, y
 
-    def setup_hp(self, lr: float, optimizer_name: str, *args, **kwargs):
+    def setup_hp(self, lr: float, optimizer_args: Dict, scheduler_args: Optional[Dict] = None, *args, **kwargs):
         """Set the hyperparameters.
         Args:
             :param lr: learning rate
-            :optimizer_name: the name of the optimizer.
+            :param optimizer_args: dictionary with the class path and init args
         """
         self.lr = lr
-        self.optimizer_class = NAME_TO_OPTIMIZER.get(optimizer_name, None)
+        self.optimizer_args = OmegaConf.to_container(optimizer_args)  # convert to dict
+        self.scheduler_args = OmegaConf.to_container(scheduler_args) if scheduler_args is not None else None
 
     def configure_optimizers(self):
         """Configure the optimizer"""
-        if self.optimizer_class is None:
+        if self.optimizer_args is None:
             logger.debug("OPTIMIZER NAME NOT FOUND")
-        optimizer = self.optimizer_class(self.parameters(), lr=self.lr)
+        self.optimizer_args["init_args"]["params"] = self.model.parameters()
+        optimizer = instantiate_class_from_init(self.optimizer_args)
+        if self.scheduler_args is not None:
+            scheduler_args = self.scheduler_args
+            scheduler_args["init_args"]["optimizer"] = optimizer
+            scheduler = instantiate_class_from_init(self.scheduler_args)
+            return [optimizer], [scheduler]
         return optimizer
 
     def setup_metrics(self, num_classes: int = 2, *args, **kwargs):
@@ -134,7 +140,7 @@ class AbstractPlModule(LightningModule):
         preds = torch.argmax(logits, dim=dim)
         return preds
 
-    def evaluate(self, batch, split: str) -> None:
+    def evaluate(self, batch, batch_nb, split: str) -> None:
         """
         :param split: which split (test or validation) for logging
         :return:
@@ -142,7 +148,7 @@ class AbstractPlModule(LightningModule):
         x, y = self.interpret_batch(batch)
         logits = self.forward(x, y)
         loss = self.loss(logits, y)  # type: ignore
-        preds = self.postprocess_eval(logits, dim=1)
+        preds = self.postprocess_eval(logits)
         self.log_metrics(y, preds, loss, split)
 
     def log_metrics(self, y, preds, loss, split) -> None:
@@ -185,6 +191,9 @@ class AbstractPlModule(LightningModule):
                 c_logger.log_loss(split, loss, pl_model=self)
                 # Log the metrics
                 self._log_metrics_to_logger(c_logger, split, scores)
+                if self.scheduler_args is not None:
+                    lr = self.lr_schedulers().get_last_lr()[0]
+                    c_logger.log_value("Learning rate", lr)
 
     def _log_metrics_to_logger(
         self,
@@ -204,13 +213,17 @@ class AbstractPlModule(LightningModule):
     ):
         """Log metrics at the end of epoch."""
         for metric_name, score in scores.items():
-            logger.log_metric_end_epoch(split, score, metric_name, pl_model=self)
+            if isinstance(score, Dict):
+                for m_name, c_score in score.items():
+                    logger.log_metric_end_epoch(split, c_score, metric_name+"_"+m_name, pl_model=self)
+            else:
+                logger.log_metric_end_epoch(split, score, metric_name, pl_model=self)
 
     def validation_step(self, batch, batch_idx):
-        self.evaluate(batch, "val")
+        self.evaluate(batch, batch_idx, "val")
 
     def test_step(self, batch, batch_idx):
-        self.evaluate(batch, "test")
+        self.evaluate(batch, batch_idx, "test")
 
     def _shared_epoch_end(self, metric_dict: Dict, split: str):
         """Log at the end of the epoch."""

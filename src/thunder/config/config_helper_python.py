@@ -7,12 +7,12 @@ from loguru import logger
 from pytorch_lightning import Trainer
 from torch import nn
 
-from helper.pytorch_helper.thunder.config.config_helper_abstract import ConfigHelperAbstract
-from helper.pytorch_helper.thunder.data.datamodule_abstract import DataModuleAbstract
-from helper.pytorch_helper.thunder.data.dataset_abstract import DatasetAbstract
-from helper.pytorch_helper.thunder.features.preprocess_abstract import PreprocessAbstract
-from helper.pytorch_helper.thunder.loggers.logger_abstract import LoggerAbstract
-from helper.pytorch_helper.thunder.pl_model.abstract_pl_model import AbstractPlModule
+from thunder.config.config_helper_abstract import ConfigHelperAbstract
+from thunder.data.datamodule_abstract import DataModuleAbstract
+from thunder.data.dataset_abstract import DatasetAbstract
+from thunder.features.preprocess_abstract import PreprocessAbstract
+from thunder.loggers.logger_abstract import LoggerAbstract
+from thunder.pl_model.abstract_pl_model import AbstractPlModule
 
 
 class ConfigHelperPython(ConfigHelperAbstract):
