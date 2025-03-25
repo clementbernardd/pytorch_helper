@@ -8,9 +8,11 @@ from torch import nn
 
 from cthunder.data.datamodule_abstract import DataModuleAbstract
 from cthunder.data.dataset_abstract import DatasetAbstract
+from cthunder.features.postprocess_abstract import PostprocessAbstract
 from cthunder.features.preprocess_abstract import PreprocessAbstract
 from cthunder.loggers.logger_abstract import LoggerAbstract
 from cthunder.pl_model.abstract_pl_model import AbstractPlModule
+
 
 
 class ConfigHelperAbstract:
@@ -25,6 +27,7 @@ class ConfigHelperAbstract:
         # Dictionary to convert names to given functions.
         self.name_to_function = {
             "preprocesses": self.get_preprocesses,
+            "postprocesses": self.get_postprocesses,
             "dataset": self.get_dataset,
             "datamodule": self.get_datamodule,
             "model": self.get_model,
@@ -46,6 +49,14 @@ class ConfigHelperAbstract:
         """
         Return the preprocesses from the config file.
         :return: a list of preprocesses initialised with they parameters
+        """
+        raise NotImplementedError
+
+    @abstractmethod
+    def get_postprocesses(self) -> Optional[List[PostprocessAbstract]]:
+        """
+        Return the postprocesses from the config file.
+        :return: a list of postprocesses initialised with they parameters
         """
         raise NotImplementedError
 

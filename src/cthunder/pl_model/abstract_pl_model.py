@@ -1,17 +1,14 @@
 """Abstract PytorchLightningModule class."""
-from typing import Any, Dict, List, Optional, Union
+from typing import Any, Dict, List, Optional
 
 import torch
-import torch.nn.functional as F
 from loguru import logger
 from lightning.pytorch import LightningModule
 from omegaconf import OmegaConf
 from torch import nn
 from torchmetrics import Accuracy, F1Score, Precision, Recall
 
-from cthunder.features.postproccess_abstract import (
-    PostprocessAbstract,
-)
+from cthunder.features.postprocess_abstract import PostprocessAbstract
 from cthunder.loggers.default_logger import DefaultLogger
 from cthunder.loggers.logger_abstract import LoggerAbstract
 from cthunder.utils.utils import instantiate_class_from_init

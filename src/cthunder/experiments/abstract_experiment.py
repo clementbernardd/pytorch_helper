@@ -16,10 +16,12 @@ from cthunder.config.config_helper_abstract import ConfigHelperAbstract
 from cthunder.config.config_helper_python import ConfigHelperPython
 from cthunder.config.config_helper_yaml import ConfigHelperYAML
 from cthunder.data.datamodule_abstract import DataModuleAbstract
+from cthunder.features.postprocess_abstract import PostprocessAbstract
 from cthunder.features.preprocess_abstract import PreprocessAbstract
 from cthunder.loggers.logger_abstract import LoggerAbstract
 from cthunder.pl_model.abstract_pl_model import AbstractPlModule
 from cthunder.utils.utils import save_json
+
 
 
 
@@ -64,11 +66,11 @@ class AbstractExperiment:
         random.seed(seed)
 
     def init_config_helper(
-        self,
-        config_class: Type[ConfigHelperAbstract] = None,
-        config_path: Optional[str] = None,
-        *args,
-        **kwargs,
+            self,
+            config_class: Type[ConfigHelperAbstract] = None,
+            config_path: Optional[str] = None,
+            *args,
+            **kwargs,
     ):
         """Initialise the config helper to get the hyperparameters.
         Args:
@@ -165,11 +167,11 @@ class AbstractExperiment:
         self.setup_trainer(*args, **kwargs)
 
     def init_pl_model(
-        self,
-        pl_model: Optional[AbstractPlModule] = None,
-        custom_loggers: Optional[List[LoggerAbstract]] = None,
-        *args,
-        **kwargs,
+            self,
+            pl_model: Optional[AbstractPlModule] = None,
+            custom_loggers: Optional[List[LoggerAbstract]] = None,
+            *args,
+            **kwargs,
     ):
         """Initialise the pytorch lightning model.
         :param pl_model: the pytorch lightning class that does the training process.
@@ -179,7 +181,7 @@ class AbstractExperiment:
             self.pl_model.config_path = self.config_path  # type: ignore
 
     def _init_module(
-        self, module: Any, name: str, class_instance: Any = None, *args, **kwargs
+            self, module: Any, name: str, class_instance: Any = None, *args, **kwargs
     ):
         """
         Return the value if exists in the config file.
@@ -203,7 +205,7 @@ class AbstractExperiment:
                 logger.debug("METHOD NOT FOUND IN CONFIG HELPER")
 
     def init_datamodule(
-        self, datamodule: Optional[DataModuleAbstract] = None, *args, **kwargs
+            self, datamodule: Optional[DataModuleAbstract] = None, *args, **kwargs
     ):
         """
         Initialise the dataloaders.
@@ -214,7 +216,7 @@ class AbstractExperiment:
         )
 
     def init_preprocesses(
-        self, preprocesses: Optional[List[PreprocessAbstract]] = None, *args, **kwargs
+            self, preprocesses: Optional[List[PreprocessAbstract]] = None, *args, **kwargs
     ):
         """Initialise the preprocessing.
         Args:
@@ -223,7 +225,7 @@ class AbstractExperiment:
         self.preprocesses = self._init_module(preprocesses, "preprocesses")
 
     def init_postprocesses(
-        self, postprocesses: Optional[List[PostprocessAbstract]] = None, *args, **kwargs
+            self, postprocesses: Optional[List[PostprocessAbstract]] = None, *args, **kwargs
     ):
         """Initialise the postprocesses.
         Args:
@@ -271,13 +273,13 @@ class AbstractExperiment:
         return TQDMProgressBar()
 
     def init_model_checkpoint_callback(
-        self,
-        checkpoint_dir: Optional[str] = "models",
-        monitor_loss: Optional[str] = "val_loss",
-        model_name: Optional[str] = "example",
-        save_top_k: Optional[int] = 1,
-        *args,
-        **kwargs,
+            self,
+            checkpoint_dir: Optional[str] = "models",
+            monitor_loss: Optional[str] = "val_loss",
+            model_name: Optional[str] = "example",
+            save_top_k: Optional[int] = 1,
+            *args,
+            **kwargs,
     ):
         """Initialise the callback that specify where are stored the checkpoints."""
         if self.config is not None:
@@ -301,4 +303,3 @@ class AbstractExperiment:
     def infer(self, *args, **kwargs):
         """Do the inference."""
         pass
-

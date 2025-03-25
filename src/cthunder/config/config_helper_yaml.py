@@ -3,7 +3,7 @@ import os.path
 from typing import Any, Dict, List, Optional, Union
 
 from loguru import logger
-from omegaconf import DictConfig
+from omegaconf import DictConfig, OmegaConf
 from lightning import Trainer
 from torch import nn
 
@@ -15,6 +15,7 @@ from cthunder.features.preprocess_abstract import PreprocessAbstract
 from cthunder.loggers.logger_abstract import LoggerAbstract
 from cthunder.pl_model.abstract_pl_model import AbstractPlModule
 from cthunder.utils.utils import open_yml, save_to_yaml, instantiate_class_from_init
+
 
 
 class ConfigHelperYAML(ConfigHelperAbstract):
@@ -47,7 +48,7 @@ class ConfigHelperYAML(ConfigHelperAbstract):
             logger.debug("CONFIG PATH NOT READABLE")
 
     def _get_value_from_keys(
-        self, keys: Union[List[str], str], config: Optional[Dict] = None
+            self, keys: Union[List[str], str], config: Optional[Dict] = None
     ) -> Any:
         """
         Return the value from nested keys.
@@ -75,21 +76,36 @@ class ConfigHelperYAML(ConfigHelperAbstract):
                 f"AND GOT VALUE OF TYPE {type(keys)} : {keys}"
             )
 
+    def _get_processes(self, name_process: str) -> Optional[List]:
+        """
+        Return the preprocesses or postprocesses from the yaml config file.
+        :param name_process: either postprocesses or preprocesses
+        :return: a list of processes with their parameters
+        """
+        processes: List = []
+        list_processes = self._get_value_from_keys([name_process])
+        if list_processes is None:
+            return processes
+        for name in list_processes:
+            params = self._get_value_from_keys([name_process, name])
+            class_inst = instantiate_class_from_init(init=params)
+            if class_inst is not None:
+                processes.append(class_inst)
+        return processes
+
     def get_preprocesses(self) -> Optional[List[PreprocessAbstract]]:
         """
         Return the preprocesses from the yaml config file.
-        :return: a list of preprocesses initialised with they parameters
+        :return: a list of preprocesses initialised with their parameters
         """
-        preprocesses: List[PreprocessAbstract] = []
-        list_preprocesses = self._get_value_from_keys("preprocesses", None)
-        if list_preprocesses is None:
-            return preprocesses
-        for name in list_preprocesses:
-            params = self._get_value_from_keys(["preprocesses", name])
-            class_inst = instantiate_class_from_init(init=params)
-            if class_inst is not None:
-                preprocesses.append(class_inst)
-        return preprocesses
+        return self._get_processes("preprocesses")
+
+    def get_postprocesses(self) -> Optional[List[PreprocessAbstract]]:
+        """
+        Return the preprocesses from the yaml config file.
+        :return: a list of preprocesses initialised with their parameters
+        """
+        return self._get_processes("postprocesses")
 
     def get_dataset(self) -> Optional[DatasetAbstract]:
         """
@@ -147,11 +163,20 @@ class ConfigHelperYAML(ConfigHelperAbstract):
         if pl_model_params is None:
             return None
         model = self.get_model()
+        postprocess = self.get_postprocesses()
+        loggers = self.get_logger()
         pl_model_params["init_args"] = {
             **pl_model_params.get("init_args", {}),
             **{"model": model},
+            **{"postprocesses": postprocess},
+            **{"custom_loggers": loggers},
         }
-        pl_model = instantiate_class_from_init(pl_model_params)
+        chkpt_path = self.config.get("pl_model",{}).get("init_args", {}).get("checkpoint_path", None)
+        if chkpt_path is None:
+            pl_model = instantiate_class_from_init(pl_model_params)
+        else:
+            pl_model = instantiate_class_from_init(pl_model_params)
+            pl_model = pl_model.load_from_checkpoint(**pl_model_params["init_args"])
         return pl_model
 
     def get_trainer(self) -> Trainer:
@@ -181,7 +206,15 @@ class ConfigHelperYAML(ConfigHelperAbstract):
 
     def get_logger(self) -> List[LoggerAbstract]:
         """Return a list of logger."""
-        pass
+        params = self.config.get("loggers", {})
+        loggers = []
+        for name, param in params.items():
+            param_ = dict(param)
+            init_args = dict(param_.get("init_args", {}))
+            init_args['config'] = self.config
+            param_['init_args'] = init_args
+            loggers.append(instantiate_class_from_init(init=param_))
+        return loggers
 
     def save_checkpoints(self, log_path: str, checkpoint_path: str) -> None:
         """
@@ -189,10 +222,12 @@ class ConfigHelperYAML(ConfigHelperAbstract):
         :param log_path: path to the logs
         :param checkpoint_path: path where is stored the model checkpoint.
         """
-        params = self.config.get("pl_model", {}).get("init_args", {})
+        params = dict(self.config.get("pl_model", {}).get("init_args", {}))
         params["checkpoint_path"] = checkpoint_path
         path_to_save = os.path.join(log_path, "config.yml")
-        save_to_yaml(path_to_save, self.config)
+        self.config.get("pl_model", {})['init_args'] = params
+        config = OmegaConf.to_container(self.config)
+        save_to_yaml(path_to_save, config)
         logger.debug(f"YAML CONFIG SAVED IN : {path_to_save}")
 
     def get_experiment_class(self, *args, **kwargs) -> Any:

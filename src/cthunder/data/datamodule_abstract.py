@@ -15,7 +15,7 @@ class DataModuleAbstract(LightningDataModule):
     Class that loads the different dataloaders for training, validation and testing sets.
 
     Methods:
-        __init__(self, preprocesses, batch_size, shuffle, device, *args, **kwargs)
+        __init__(self, preprocesses, batch_size, shuffle, *args, **kwargs)
         prepare_data(self)
         collate_fn(self)
         _get_dataloader_from_split(self, split)
@@ -29,7 +29,6 @@ class DataModuleAbstract(LightningDataModule):
         dataset_init: Dict,
         preprocesses: Optional[List[PreprocessAbstract]],
         batch_size: int,
-        device: Union[Optional[str], torch.device],
         shuffle: bool = False,
         num_workers: int = 0,
         *args,
@@ -43,7 +42,6 @@ class DataModuleAbstract(LightningDataModule):
         :param preprocesses: the list of different preprocessing to do
         :param batch_size: the number of examples for a batch
         :param shuffle: whether to shuffle or not the train dataset.
-        :param device: which device to use
         :param num_workers: the number of workers for the DataLoader.
 
         Attributes:
@@ -54,7 +52,6 @@ class DataModuleAbstract(LightningDataModule):
         self.dataset_init = dataset_init
         self.preprocesses = preprocesses
         self.batch_size = batch_size
-        self.device = device
         self.num_workers = num_workers
         self.datasets: Dict[str, Dataset] = {
             "train": Dataset(),
@@ -114,6 +111,7 @@ class DataModuleAbstract(LightningDataModule):
                 shuffle=self.all_shuffle.get(split, False),
                 collate_fn=collate_fn,
                 num_workers=self.num_workers,
+                persistent_workers=self.num_workers > 0,
             )
         else:
             raise NotImplementedError(f"Split not in dataset keys : {split}")

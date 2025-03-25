@@ -14,13 +14,11 @@ class DatasetAbstract(Dataset):
     def __init__(
         self,
         preprocesses: Optional[List[PreprocessAbstract]] = None,
-        device: Optional[str] = None,
         *args,
         **kwargs
     ):
         """ """
         self.preprocesses = preprocesses
-        self.device = device
         self.setup_data(*args, **kwargs)
 
     @abstractmethod
@@ -54,5 +52,5 @@ class DatasetAbstract(Dataset):
         """Should use at least 'self.preprocess(sample)'."""
         sample = self.read_data(item)
         sample = self.preprocess(sample)
-        x, y = sample.read_to_torch(self.device)
+        x, y = sample.read_to_torch()
         return x, y

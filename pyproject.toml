@@ -1,6 +1,6 @@
 [project]
 name = "cthunder"
-version = "0.2.0"
+version = "0.3.11"
 description = "Source code to add layers to Pytorch Lightning for training procedures."
 readme = "README.md"
 requires-python = ">=3.10"
@@ -9,5 +9,5 @@ dependencies = [
     "lightning>=2.3.3",
     "loguru>=0.7.3",
     "omegaconf>=2.3.0",
-    "torch==2.0",
+    "torch>=2.0",
 ]
